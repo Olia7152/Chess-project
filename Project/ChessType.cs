@@ -1,12 +1,13 @@
 //****************************************************************************
 //***      Class ChessType defines the types of chess pieces               ***
 //****************************************************************************
+namespace Classes;
 class ChessType
 {
   internal string figure;
   internal char letter;
-  string scheme;
-  public ChessType(string figure = "Pawn", char letter = 'P', string scheme = "10")
+  internal string scheme;
+  internal ChessType(string figure = "Pawn", char letter = 'P', string scheme = "10")
   {
     this.figure = figure;
     this.letter = letter;
