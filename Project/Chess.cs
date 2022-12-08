@@ -1,24 +1,31 @@
 //****************************************************************************
 //***           Сlass defines a collection of chess pieces                 ***
 //****************************************************************************
+namespace Classes;
 class Chess
 {
-  internal string color = "white";
-  internal ChessType chessType= pawn;
-  internal static ChessType pawn = new ChessType ("Pawn", 'P',"10");
-  static ChessType knight = new ChessType ("knight", 'N', "10" );
-  static ChessType bishop = new ChessType ("bishop", 'B', "10" );
-  static ChessType queen  = new ChessType ("queen",  'Q', "10" );
-  static ChessType king   = new ChessType ("king",   'K', "10" );
-  static ChessType rook   = new ChessType ("rook",   'R', "10" );
+  internal string color { get; set; } = "white";
+  internal bool startPos = true;
+  internal ChessType chessType { get; set; } = pawn;
+  internal static ChessType pawn = new ChessType("Pawn", 'P', "(1,0),(1,-1),(1,1))");
+  internal static ChessType knight = new ChessType("Knight", 'N', "(2,1),(2,-1),(-1,-2),(-1,2),(-2,1),(-2,-1),(1,-2),(1,2)");
+  internal static ChessType king = new ChessType("King", 'K', "(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)");
+  static ChessType bishop = new ChessType("Bishop", 'B', "(1,1),(1-1),(-1,-1),(-1,1)");
+  static ChessType queen = new ChessType("Queen", 'Q', "(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)");
+  static ChessType rook = new ChessType("Rook", 'R', "(1,0),(0,1),(-1,0),(0,-1),(1,-1)");
 
   internal static ChessType OptionalFigure(int opt) => opt switch
   {
-    0 => rook,  7 => rook,
-    1 => knight,6 => knight,
-    2 => bishop,5 => bishop,
-    3 => king,  4 => queen,
+    0 => rook,
+    7 => rook,
+    1 => knight,
+    6 => knight,
+    2 => bishop,
+    5 => bishop,
+    3 => king,
+    4 => queen,
     _ => pawn
   };
+  internal void SetStartPosition(bool isStartPos) => this.startPos = isStartPos;
   internal void Print() => Console.WriteLine($"{chessType.figure} {color}");
 }
