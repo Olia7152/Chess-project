@@ -4,100 +4,151 @@
 namespace Classes;
 class ChessBoard
 {
-  internal ChessCell[,] chessCell { get; } //= new ChessCell[8, 8];
+  internal ChessCell[,] chessCell { get; }
   internal ChessCell? activeCell { get; set; }
-  internal static int ActiveX { get; set; }
-  internal static int ActiveY { get; set; }
+  internal static int activeX { get; set; }
+  internal static int activeY { get; set; }
+  internal static int numberMoves { get; set; } = 0;
+  internal static bool isWhitesMove = true;
+  
 
   //***   Arrangement of chess pieces at the beginning of the game   ***
-  //internal void InitChesCells()
   internal ChessBoard()
   {
     chessCell = new ChessCell[8, 8];
+
     for (int i = 0; i < 8; i++)
+    {
       for (int j = 0; j < 8; j++)
       {
-        string colorCell = ((i + j) % 2 == 0 ? "white" : "black"),
-        colorChess = (i < 2) ? "white" : "black";
-
         Chess? currChess = null;
-        if (i < 2 || i > 5)
-        {
-          ChessType figure = (i == 0 || i == 7) ? Chess.OptionalFigure(j) : Chess.pawn;
-          currChess = new Chess { color = colorChess, startPos = true, chessType = figure };
-        }
-        chessCell[i, j] = new ChessCell { color = colorCell, chess = currChess };
+        chessCell[i, j] = new ChessCell { color = ((i + j) % 2 == 0 ? "white" : "black"), 
+                          chess = null };
       }
+    }
+  }
+  
+  internal void StartPosition()
+  { 
+    for (int i = 0; i < 8; i++)
+    {
+      ChessType figure = Chess.OptionalFigure(i);
+      ChessSet(0, i, "white", true, figure);
+      ChessSet(7, i, "black", true, figure);
+      ChessSet(6, i, "black", true, Chess.pawn);
+      ChessSet(1, i, "white", true, Chess.pawn);
+    }
   }
 
-  internal void SetActiveCell(int activeX, int activeY)
+  internal void RandomPosition(int n)
   {
-    if (!IsRange(activeX, activeY))
+    for (int i = 0; i < n; i++ )
     {
-      throw new ArgumentOutOfRangeException(nameof(ActiveX), "Выход за пределы шахматной доски");
+      ChessSet(new Random().Next(0, 8), new Random().Next(0, 8), ((i%2==0)?"black":"white"),
+              false, Chess.OptionalFigure(new Random().Next(0, 6)));
     }
-    if (chessCell[activeX, activeY] == null)
+  }
+  internal void SetActiveCell(params int[] coord)
+  { 
+    if (coord.Length <2)
+    {
+      coord = new int[2];
+      int x = 45, y = 7;
+      Console.SetCursorPosition(x, y);
+      if (!ReadPosition("Активная фигура(введите клетку, например E2): ", ref coord[0], ref coord[1]))
+      {
+        throw new ArgumentException(nameof(coord), "Неверный ввод");
+      }
+    }
+    else if (!IsRange(coord[0], coord[1]))
+    {
+      throw new ArgumentOutOfRangeException(nameof(activeX), "Выход за пределы шахматной доски");
+    }
+
+    if (chessCell[coord[1], coord[0]].chess == null)
     {
       throw new ArgumentNullException(nameof(chessCell), "Пустая клетка не может быть активна");
     }
-    //activeCell = 
-    ActiveX = activeX;
-    ActiveY = activeY;
+
+    if (((isWhitesMove)?"white":"black") != chessCell[coord[1], coord[0]].chess.color)
+    {
+      throw new ArgumentNullException(nameof(chessCell), "Невозможно играть фигурой противника");
+    }
+    activeX = coord[1];
+    activeY = coord[0];
     PossibleMove();
+    if (numberMoves == 0)
+    {
+      activeX = -1;
+      activeY = -1;
+      throw new ArgumentNullException(nameof(chessCell), "Отсутствуют варианты ходов");
+    }
   }
 
-  internal string GetActiveCell() => chessCell[ActiveX, ActiveY].GetShortName();
-  internal void PrintCells()
+  internal string GetActiveCell() => chessCell[activeX, activeY].GetShortName();
+
+  internal void ChessSet(int x, int y, string colorChess, bool startPos, ChessType figure)
   {
-    //Console.WriteLine("\n        Новая игра");
-    Console.WriteLine("\n    A   B   C   D   E   F   J   H   \n");
+    chessCell[x, y].chess = new Chess { color = colorChess, startPos = true, chessType = figure };
+  }
+
+  bool IsRange(int x, int y) => (x >= 0 && x < 8 && y >= 0 && y < 8);
+  bool IsActive() => (activeX >= 0);
+  
+  internal void ChessMove(params int[] coord)
+  {
+    if (coord.Length < 2)
+    {
+      coord = new int[2];
+      int x = 45, y = 11;
+      Console.SetCursorPosition(x, y);
+      if (!ReadPosition("Выполнить ход (введите клетку, например E4): ", ref coord[0], ref coord[1]))
+      {
+        throw new ArgumentException(nameof(coord), "Неверный ввод");
+      }
+    }
+
+    if (!IsRange(coord[0], coord[1]))
+    {
+      throw new ArgumentOutOfRangeException(nameof(activeX), "Ход невозможен: выход за пределы шахматной доски"); 
+    }
+    
+    if (!chessCell[coord[1], coord[0]].possibleMove)
+    {
+      throw new ArgumentOutOfRangeException(nameof(coord), $"Ход не допустим для данной фигуры");
+    }
+    ChessCell tmp = chessCell[coord[1], coord[0]];
+    chessCell[coord[1], coord[0]] = chessCell[activeX, activeY]; ;
+    chessCell[activeX, activeY] = tmp;
+    chessCell[activeX, activeY].chess = null;
+
+    PrintCell(coord[1], coord[0]);
+    PrintCell(activeX, activeY);
+    activeX = -1;
+    activeY = -1;
+    numberMoves = 0;
+
     for (int i = 0; i < 8; i++)
     {
-      Console.Write($"{8 - i}  ");
       for (int j = 0; j < 8; j++)
       {
-        Console.Write($"{chessCell[7 - i, j].GetShortName()} " + (j == 7 ? $"{8 - i}  \n" : ""));
-      }
-      Console.WriteLine();
-    }
-    Console.WriteLine("   A   B   C   D   E   F   J   H   \n");
-  }
-
-  internal void ChessMove(int moveToX, int moveToY)
-  {
-    if (IsRange(moveToX, moveToY))
-    {
-      Console.WriteLine($"{chessCell[ActiveX, ActiveY].possibleMove}");
-      if (chessCell[moveToX, moveToY].possibleMove)
-      {
-        ChessCell tmpCell = chessCell[moveToX, moveToY];
-        chessCell[moveToX, moveToY] = chessCell[ActiveX, ActiveY]; ;
-        chessCell[ActiveX, ActiveY] = tmpCell;
-        ActiveX = -1;
-        ActiveY = -1;
-        for (int i = 0; i < 8; i++)
+        if (chessCell[i, j].possibleMove)
         {
-          for (int j = 0; j < 8; j++)
-          {
-            chessCell[i, j].SetPossibleMove(false);
-            //chessCell[i, j].chess.SetStartPosition(false);
-          }
+          chessCell[i, j].SetPossibleMove(false);
+          PrintCell(i, j);
         }
       }
-      else Console.WriteLine("Херня");
     }
-    else Console.WriteLine("Ход невозможен: выход за пределы шахматной доски");
   }
 
   // Search for possible moves
   void PossibleMove()
   {
-    Console.WriteLine(chessCell[ActiveX, ActiveY].GetScheme()); //chess.chessType.scheme);
-    string scheme = chessCell[ActiveX, ActiveY].GetScheme();
-    int[] delta = Array.ConvertAll(chessCell[ActiveX, ActiveY].GetScheme()
+    string scheme = chessCell[activeX, activeY].GetScheme();
+    int[] delta = Array.ConvertAll(chessCell[activeX, activeY].GetScheme()
                         .Split(new char[] { ' ', ',', '.', ',', '(', ')' },
                         System.StringSplitOptions.RemoveEmptyEntries), int.Parse);
-
+    numberMoves = 0;
     for (int k = 0; k < delta.Length; k += 2)
     {
       TryStep(delta[k], delta[k + 1]);
@@ -106,27 +157,29 @@ class ChessBoard
 
   void TryStep(int deltaI, int deltaJ)
   {
-    Chess piece = chessCell[ActiveX, ActiveY].chess;
+    Chess piece = chessCell[activeX, activeY].chess;
     ChessType figure = piece.chessType;
 
     bool isPawn = Equals(figure, Chess.pawn),
-         isOneStep = Equals(figure, Chess.king) | Equals(figure, Chess.knight);
+         isOneStep = Equals(figure, Chess.king) 
+                    || Equals(figure, Chess.knight) 
+                    || !piece.startPos && isPawn;
 
     if (isPawn & Equals(piece.color, "black")) deltaI = -deltaI;
 
-    //Console.WriteLine(figure);
-    int i = ActiveX + deltaI,
-        j = ActiveY + deltaJ;
-
+    int i = activeX + deltaI,
+        j = activeY + deltaJ;
+    
     while (IsRange(i, j))
     {
-      //Console.WriteLine($"{i} {j} {deltaI} {deltaJ} {chessCell[i, j].chess}");
       if (chessCell[i, j].chess is null)
       {
         if (isPawn & deltaJ != 0) return;
         chessCell[i, j].SetPossibleMove(true);
-        //Console.WriteLine("OO!");
-        if (isOneStep | isPawn & i == ActiveX + deltaI * 2) return;
+        numberMoves++;
+        PrintCell(i, j);
+        piece.startPos=false;
+        if (isOneStep || (isPawn &  i == activeX + deltaI * 2)) return;
       }
       else if (chessCell[i, j].chess.color != piece.color)
       {
@@ -134,15 +187,62 @@ class ChessBoard
         else
         {
           chessCell[i, j].SetPossibleMove(true);
-          //Console.WriteLine("OOO!!!");
+          PrintCell(i, j);
+          numberMoves++;
           return;
         }
       }
+      else  return;
 
       i += deltaI;
       j += deltaJ;
-    }
+    } 
   }
 
-  bool IsRange(int x, int y) => (x >= 0 && x < 8 && y >= 0 && y < 8);
+  internal bool ReadPosition(string title, ref int x, ref int y)
+  {
+    Console.Write(title);
+    string numCell = (Console.ReadLine() ?? String.Empty).ToUpper();
+    if (numCell.Length != 2) 
+    {
+      return false;
+    }
+
+    if (numCell[0] < 'A' | numCell[0] > 'H' | numCell[1] > '8' | numCell[1] < '1')
+    {
+      return false;
+    }
+    x = (int)numCell[0] - 65;
+    y = (int)numCell[1] - 49;
+    return true;
+  }
+
+  internal void PrintCells()
+  { 
+    int x = 5, y = 1;
+    Console.Clear();
+    Console.SetCursorPosition(x, y);
+    Console.Write("    A   B   C   D   E   F   G   H   ");
+    for (int i = 0; i < 8; i++)
+    {
+      y+=2;
+      Console.SetCursorPosition(x, y);
+      Console.Write($"{8 - i}  ");
+      for (int j = 0; j < 8; j++)
+      {
+        Console.Write($"{chessCell[7 - i, j].GetShortName()} " + (j == 7 ? $"{8 - i} " : ""));
+      }
+    }
+    y += 2;
+    Console.SetCursorPosition(x, y);
+    Console.Write("   A   B   C   D   E   F   G   H   ");
+    y += 2;
+    Console.SetCursorPosition(x, y);
+  }
+
+  internal void PrintCell(int i, int j)
+  {
+    Console.SetCursorPosition(4 + (j+1)  * 4, 1 + (8 - i) * 2);
+    Console.Write($"{chessCell[i, j].GetShortName()} "); 
+  }
 }
