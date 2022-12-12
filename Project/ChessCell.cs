@@ -10,7 +10,6 @@ class ChessCell
   internal void SetPossibleMove(bool isPossible) => possibleMove = isPossible;
   internal string GetShortName() => ((chess == null) ? "__" : "" + chess.chessType.letter + chess.color[0]) +
                                     ((this.possibleMove) ? "x" : " ");
-  //""+((this.possibleMove) ? "x" : ""+chess.color[0]); 
   internal string GetScheme() => ((chess == null) ? "" : chess.chessType.scheme);
   internal void PrintName() => Console.WriteLine((chess == null) ? "Пустая клетка"
                                : $"{chess.chessType.figure} {chess.color}");
